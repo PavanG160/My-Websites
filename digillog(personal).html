@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Log</title>
+<style>
+  body { margin:0; font-family: 'Segoe UI', sans-serif; background:#f0f8ff; color: #333; display: none; }
+  
+  .topbar { display:flex; justify-content:space-between; align-items:center; padding:15px 20px; background:#0077b6; color:white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  .menu { cursor:pointer; font-size:24px; }
+
+  .sidebar { position:fixed; top:0; right:-280px; width:250px; height:100%; background:#0077b6; color:white; padding:20px; transition:0.4s; z-index: 1000; }
+  .sidebar.active { right:0; }
+  .sidebar-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0096c7; margin-bottom: 15px; }
+  .close-btn { cursor: pointer; font-size: 24px; }
+  
+  .task-item { display: flex; justify-content: space-between; align-items: center; padding:12px; margin:8px 0; background:#0096c7; border-radius:8px; transition: 0.2s; }
+  .task-item:hover { background:#48cae4; }
+  .task-name { flex-grow: 1; cursor: pointer; }
+  .del-btn { cursor: pointer; padding: 5px; opacity: 0.7; transition: 0.2s; }
+  .del-btn:hover { opacity: 1; color: #ff4d4d; }
+
+  .main { padding:20px; max-width: 600px; margin: 0 auto; }
+  #title { color: #0077b6; text-align: center; }
+  .calendar { display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+  .day { padding:15px 5px; text-align:center; background:#f9f9f9; border-radius: 6px; cursor:pointer; border: 1px solid #eee; transition: 0.2s; }
+  .day.done { background:#0077b6; color:white; border-color: #0077b6; }
+
+  .controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
+  .controls button { background: #0077b6; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+
+  #progress { margin-top: 20px; font-weight: bold; color: #0077b6; background: white; padding: 10px; border-radius: 8px; text-align: center; }
+  .add-btn { width: 100%; margin-top: 15px; padding: 10px; background: #90e0ef; color: #0077b6; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+  .footer { position:fixed; bottom:20px; right:20px; background:#0077b6; color:#caf0f8; padding:8px 15px; border-radius:30px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<script>
+  const pass = prompt("Enter Password:");
+  if (pass === "2024") {
+    document.body.style.display = "block";
+  } else {
+    alert("Access Denied");
+    // Removed auto-reload to prevent infinite loops
+    document.write("Access Denied. Please refresh to try again.");
+  }
+</script>
+
+<div class="topbar">
+  <div class="logo">Digital Log</div>
+  <div class="menu" onclick="toggleMenu()">☰</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h3>My Habits</h3>
+    <span class="close-btn" onclick="toggleMenu()">×</span>
+  </div>
+  <div id="taskList"></div>
+  <button class="add-btn" onclick="addTask()">+ New Task</button>
+</div>
+
+<div class="main">
+  <h2 id="title">Select a Task</h2>
+  <div class="controls">
+    <button onclick="changeMonth(-1)">◀</button>
+    <span id="monthLabel"></span>
+    <button onclick="changeMonth(1)">▶</button>
+  </div>
+  <div class="calendar" id="calendar"></div>
+  <div id="progress"></div>
+</div>
+
+<div class="footer">Built by Pavan G</div>
+
+<script>
+let tasks = JSON.parse(localStorage.getItem("tasks")) || { "Workout": [] };
+let currentTask = Object.keys(tasks)[0];
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+
+function toggleMenu() { document.getElementById("sidebar").classList.toggle("active"); }
+
+function save() { localStorage.setItem("tasks", JSON.stringify(tasks)); }
+
+function generateCalendar() {
+  const cal = document.getElementById("calendar");
+  cal.innerHTML = "";
+  if (!currentTask) {
+    document.getElementById("title").innerText = "No Tasks Found";
+    document.getElementById("progress").innerText = "";
+    return;
+  }
+  
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  document.getElementById("monthLabel").innerText = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year:'numeric' });
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    const dayID = `${currentYear}-${currentMonth}-${i}`;
+    const div = document.createElement("div");
+    div.className = "day" + (tasks[currentTask]?.includes(dayID) ? " done" : "");
+    div.innerText = i;
+    div.onclick = () => toggleDay(dayID);
+    cal.appendChild(div);
+  }
+  updateProgress();
+}
+
+function toggleDay(dayID) {
+  if (!currentTask) return;
+  if (!tasks[currentTask]) tasks[currentTask] = [];
+  tasks[currentTask] = tasks[currentTask].includes(dayID) ? tasks[currentTask].filter(d => d !== dayID) : [...tasks[currentTask], dayID];
+  save(); 
+  generateCalendar();
+}
+
+function updateProgress() {
+  if (!currentTask || !tasks[currentTask]) {
+    document.getElementById("progress").innerText = "Task Consistency: 0%";
+    return;
+  }
+
+  // BUG FIX: Filter tasks to only count those in the currently displayed month and year
+  const currentMonthTasks = tasks[currentTask].filter(dayID => {
+    const [year, month] = dayID.split("-");
+    return parseInt(year) === currentYear && parseInt(month) === currentMonth;
+  });
+
+  let count = currentMonthTasks.length;
+  let percent = Math.min(Math.round((count / 20) * 100), 100);
+  document.getElementById("progress").innerText = `Task Consistency: ${percent}%`;
+}
+
+function renderTasks() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+  for (let task in tasks) {
+    const div = document.createElement("div");
+    div.className = "task-item";
+    
+    div.innerHTML = `
+      <span class="task-name" onclick="selectTask('${task}')">${task}</span>
+      <span class="del-btn" onclick="deleteTask('${task}')">🗑️</span>
+    `;
+    list.appendChild(div);
+  }
+}
+
+function selectTask(task) {
+  currentTask = task;
+  document.getElementById("title").innerText = task;
+  toggleMenu();
+  generateCalendar();
+}
+
+function deleteTask(taskName) {
+  if (confirm(`Delete "${taskName}"?`)) {
+    delete tasks[taskName];
+    save();
+    if (currentTask === taskName) {
+      currentTask = Object.keys(tasks)[0] || "";
+      document.getElementById("title").innerText = currentTask || "No Tasks Found";
+    }
+    renderTasks();
+    generateCalendar();
+  }
+}
+
+function addTask() {
+  const name = prompt("Enter task name:");
+  if (name && !tasks[name]) {
+    tasks[name] = [];
+    currentTask = name; 
+    document.getElementById("title").innerText = name;
+    save(); 
+    renderTasks(); 
+    generateCalendar();
+  }
+}
+
+function changeMonth(step) {
+  currentMonth += step;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  generateCalendar();
+}
+
+// Initial Run
+renderTasks();
+generateCalendar();
+document.getElementById("title").innerText = currentTask || "No Tasks Found";
+</script>
+</body>
+</html>
