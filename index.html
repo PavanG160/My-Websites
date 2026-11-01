@@ -1,0 +1,192 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pavan Portfolio</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #ffffff;
+    color: #0f172a;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    padding: 20px 40px;
+    background: #f1f5f9;
+}
+
+header h1 { color: #2563eb; }
+
+nav a {
+    margin-left: 20px;
+    text-decoration: none;
+    color: #0f172a;
+    font-weight: bold;
+}
+
+nav a:hover { color: #2563eb; }
+
+.section {
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.hero {
+    background: linear-gradient(to right, #3b82f6, #06b6d4);
+    color: white;
+}
+
+.card {
+    background: #f8fafc;
+    padding: 20px;
+    margin: 15px auto;
+    border-radius: 12px;
+    width: 260px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+input {
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+button {
+    padding: 10px 20px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1e40af;
+}
+
+canvas {
+    max-width: 90%;
+    margin-top: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Pavan</h1>
+</header>
+
+<section class="section hero">
+    <h2>Hi, I'm Pavan 👋</h2>
+    <p>Track savings & self growth 🚀</p>
+</section>
+
+<section class="section">
+    <h2>📊 Try Your Own Savings</h2>
+
+    <input type="date" id="userDate">
+    <input type="number" id="userAmount" placeholder="Weekly Amount ₹">
+
+    <br>
+    <button onclick="calculateUser()">Calculate</button>
+
+    <div class="card">
+        <p>Weeks</p>
+        <p id="userWeeks"></p>
+    </div>
+
+    <div class="card">
+        <p>Total Saved</p>
+        <p id="userMoney"></p>
+    </div>
+</section>
+
+<section class="section">
+    <h2>🔐 My Savings (Example)</h2>
+
+    <button onclick="checkPassword()">View My Data</button>
+
+    <div id="protected" style="display:none;">
+        <div class="card">
+            <p>Weeks</p>
+            <p id="weeks"></p>
+        </div>
+
+        <div class="card">
+            <p>Total</p>
+            <p id="money"></p>
+        </div>
+
+        <canvas id="myChart"></canvas>
+    </div>
+</section>
+
+<script>
+// 🔐 Password
+function checkPassword() {
+    let pass = prompt("Enter password:");
+
+    if (pass === "economic2023") {
+        document.getElementById("protected").style.display = "block";
+    } else {
+        alert("Wrong password");
+    }
+}
+
+// 👤 User calculation
+function calculateUser() {
+    let date = new Date(document.getElementById("userDate").value);
+    let amount = Number(document.getElementById("userAmount").value);
+
+    let today = new Date();
+    let weeks = Math.floor((today - date) / (1000*60*60*24*7));
+    let total = weeks * amount;
+
+    document.getElementById("userWeeks").innerText = weeks;
+    document.getElementById("userMoney").innerText = "₹ " + total;
+}
+
+// 🔥 Your data (example)
+let startDate = new Date("2023-08-10");
+let today = new Date();
+
+let weeks = Math.floor((today - startDate) / (1000*60*60*24*7));
+let weeklyAmount = 50;
+let total = weeks * weeklyAmount;
+
+document.getElementById("weeks").innerText = weeks;
+document.getElementById("money").innerText = "₹ " + total;
+
+// Graph
+let labels = [];
+let data = [];
+
+for (let i = 1; i <= weeks; i++) {
+    labels.push("W" + i);
+    data.push(i * weeklyAmount);
+}
+
+new Chart(document.getElementById("myChart"), {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [{
+            label: "My Savings",
+            data: data,
+            borderColor: "#2563eb"
+        }]
+    }
+});
+</script>
+
+</body>
+</html>
