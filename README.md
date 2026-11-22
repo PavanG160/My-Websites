@@ -12,6 +12,6 @@
 
 6.[PYTHON SAMPLE PROGRAMM](https://pavang160.github.io/My-Websites/Python%20programm/)
 
-7.[Gmail Collector]((https://pavang160.github.io/My-Websites/Gmail%20Collector/)
+7.[Gmail Collector](https://pavang160.github.io/My-Websites/Gmail%20Collector/)
 
- [Gmail Collector Admain Login]((https://pavang160.github.io/My-Websites/Admain%20Login/)
+ [Gmail Collector Admain Login](https://pavang160.github.io/My-Websites/Admain%20Login/)
