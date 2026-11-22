@@ -1,0 +1,279 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            margin: 0;
+            padding: 25px;
+        }
+
+        .container {
+            max-width: 850px;
+            margin: auto;
+        }
+
+        .card {
+            background: white;
+            padding: 22px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 12px #00000010;
+        }
+
+        h1 {
+            color: #2563eb;
+        }
+
+        input {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 12px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .logout {
+            background: #dc2626;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+            overflow-wrap: anywhere;
+        }
+
+        #dashboard {
+            display: none;
+        }
+
+        #message {
+            color: #dc2626;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Admin Dashboard</h1>
+
+    <!-- LOGIN -->
+
+    <div class="card" id="login">
+
+        <h2>Admin Login</h2>
+
+        <input type="email" id="email"
+            placeholder="Admin email">
+
+        <input type="password" id="password"
+            placeholder="Password">
+
+        <button id="loginBtn" onclick="loginAdmin()">
+            Login
+        </button>
+
+        <p id="message"></p>
+
+    </div>
+
+    <!-- DASHBOARD -->
+
+    <div id="dashboard">
+
+        <div class="card">
+            <h2>Welcome, Admin!</h2>
+
+            <h3>Total Users: <span id="total">0</span></h3>
+
+            <button onclick="loadUsers()">
+                Refresh Users
+            </button>
+
+            <button class="logout" onclick="logoutAdmin()">
+                Logout
+            </button>
+        </div>
+
+        <div class="card">
+
+            <h2>Registered Users</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+
+                <tbody id="userList"></tbody>
+            </table>
+
+            <p id="status"></p>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+// SUPABASE CONNECTION
+
+const SUPABASE_URL =
+"https://gwuxsjdhkxelonjdhtsm.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_mBmjQIoCG9H8cuqRe5v5cA_oOqKUsHX";
+
+const client = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+
+// ADMIN LOGIN
+
+async function loginAdmin() {
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    const message = document.getElementById("message");
+    const loginBtn = document.getElementById("loginBtn");
+
+    loginBtn.disabled = true;
+    message.textContent = "Checking login...";
+
+    try {
+
+        const { data, error } =
+            await client.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+        if (error) throw error;
+
+        // VERIFY ADMIN ROLE
+
+        const { data: role, error: roleError } =
+            await client
+                .from("admin_users")
+                .select("user_id")
+                .eq("user_id", data.user.id)
+                .maybeSingle();
+
+        if (roleError) throw roleError;
+
+        if (!role) {
+            await client.auth.signOut();
+            throw new Error("You are not an administrator.");
+        }
+
+        document.getElementById("login").style.display = "none";
+        document.getElementById("dashboard").style.display = "block";
+
+        await loadUsers();
+
+    } catch (error) {
+
+        message.textContent = error.message;
+
+    } finally {
+
+        loginBtn.disabled = false;
+
+    }
+
+}
+
+
+// LOAD USERS
+
+async function loadUsers() {
+
+    const list = document.getElementById("userList");
+    const status = document.getElementById("status");
+
+    list.replaceChildren();
+    status.textContent = "Loading users...";
+
+    const { data, error } = await client
+        .from("users")
+        .select("id, name, email")
+        .order("id", { ascending: true });
+
+    if (error) {
+        status.textContent = "Error: " + error.message;
+        return;
+    }
+
+    document.getElementById("total").textContent = data.length;
+
+    data.forEach(user => {
+
+        const row = document.createElement("tr");
+
+        [user.id, user.name, user.email].forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value ?? "";
+            row.appendChild(cell);
+        });
+
+        list.appendChild(row);
+
+    });
+
+    status.textContent = data.length + " users loaded.";
+
+}
+
+
+// LOGOUT
+
+async function logoutAdmin() {
+
+    await client.auth.signOut();
+
+    document.getElementById("dashboard").style.display = "none";
+    document.getElementById("login").style.display = "block";
+
+    document.getElementById("password").value = "";
+    document.getElementById("message").textContent = "Logged out.";
+
+}
+
+</script>
+
+</body>
+</html>
