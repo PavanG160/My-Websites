@@ -14,4 +14,4 @@
 
 7.[Gmail Collector](https://pavang160.github.io/My-Websites/Gmail%20Collector/)
 
- [Gmail Collector Admain Login](https://pavang160.github.io/My-Websites/Admain%20Login/)
+ [Gmail Collector Admin Login](https://pavang160.github.io/My-Websites/Admin%20Login/)
